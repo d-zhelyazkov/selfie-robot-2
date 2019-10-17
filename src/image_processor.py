@@ -3,6 +3,7 @@
 import math
 import cv2
 
+from window import show_debug_image
 from util import *
 
 GREEN_COLOR = (0, 255, 0)
@@ -11,8 +12,6 @@ BORDER_SIZE = 100
 PROCESS_PIC_SIZE = m_to_num(1)
 ERODE_KERNEL = kernel(3)
 DILATE_KERNEL = kernel(9)
-
-from window import show_debug_image
 
 blob_detector_params = cv2.SimpleBlobDetector_Params()
 blob_detector_params.filterByArea = False
