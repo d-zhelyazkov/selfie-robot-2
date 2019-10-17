@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 
+import math
 import cv2
 
 from util import *
@@ -7,6 +8,7 @@ from util import *
 GREEN_COLOR = (0, 255, 0)
 RED_COLOR = (0, 0, 255)
 BORDER_SIZE = 100
+PROCESS_PIC_SIZE = m_to_num(1)
 ERODE_KERNEL = kernel(3)
 DILATE_KERNEL = kernel(9)
 
@@ -26,14 +28,18 @@ def process_image(image_path):
     img = cv2.imread(image_path, cv2.IMREAD_COLOR)
     show_debug_image(img, 0, 0, "image")
 
-    (blue_img, green_img, red_img) = cv2.split(img)
+    (resized_img, resize_k) = resize_image(img)
 
-    hsv_img = cv2.cvtColor(img, cv2.COLOR_BGR2HSV)
+    (blue_img, green_img, red_img) = cv2.split(resized_img)
+
+    hsv_img = cv2.cvtColor(resized_img, cv2.COLOR_BGR2HSV)
     (hue_img, sat_img, value_img) = cv2.split(hsv_img)
     show_debug_image(sat_img, 0, 1, "saturation")
 
     blue_points = process_channel(blue_img, sat_img, 1, "blue")
+    blue_points = convert_points(blue_points, resize_k)
     red_points = process_channel(red_img, sat_img, 2, "red")
+    red_points = convert_points(red_points, resize_k)
 
     show_result(img, blue_points, red_points)
     return blue_points, red_points
@@ -61,6 +67,28 @@ def process_channel(ch_img, sat_img, row, channel_name):
     blob_center_points = [blob.pt
                           for blob in blobs]
     return blob_center_points
+
+
+def convert_points(points, k):
+    return [tuple(d * k for d in point)
+            for point in points]
+
+
+def resize_image(img):
+    (height, width, _) = img.shape
+    img_size = width * height
+    debug("Image size: {}MP".format(num_to_m(img_size)))
+
+    k = math.sqrt(img_size / PROCESS_PIC_SIZE)
+    debug("Resize ratio: " + str(k))
+
+    resized_width = int(width / k)
+    resized_height = int(height / k)
+    resized_image = cv2.resize(img, (resized_width, resized_height))
+    (resized_height, resized_width, _) = resized_image.shape
+    debug("Resized image size: {}MP".format(num_to_m(resized_width * resized_height)))
+
+    return resized_image, k
 
 
 def show_result(img, blue_points, red_points):
