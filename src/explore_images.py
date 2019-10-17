@@ -20,7 +20,11 @@ i = 0
 while True:
     i %= image_count
     image_file = image_files[i]
-    improc.process_image(image_file)
+    print(image_file)
+
+    (blue_points, red_points) = improc.process_image(image_file)
+    print("BLUE points: " + str(blue_points))
+    print("RED points: " + str(red_points))
 
     key = cv2.waitKey()
     print("Key pressed: {}".format(key))
