@@ -5,6 +5,7 @@ import sys
 import os.path as path
 import image_processor as improc
 import cv2
+import config
 
 images_path = sys.argv[1]
 image_files = [path.join(images_path, file)
@@ -12,6 +13,8 @@ image_files = [path.join(images_path, file)
                if path.isfile(path.join(images_path, file))]
 image_count = len(image_files)
 print(image_files)
+
+config.debug = True
 
 i = 0
 while True:
