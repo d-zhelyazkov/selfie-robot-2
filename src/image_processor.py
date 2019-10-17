@@ -1,12 +1,14 @@
 #!/usr/bin/env python3
 
 import cv2
-import numpy as np
-import config
+
+from util import *
 
 GREEN_COLOR = (0, 255, 0)
 RED_COLOR = (0, 0, 255)
 BORDER_SIZE = 100
+ERODE_KERNEL = kernel(3)
+DILATE_KERNEL = kernel(9)
 
 from window import show_debug_image
 
@@ -48,8 +50,8 @@ def process_channel(ch_img, sat_img, row, channel_name):
     (result, bin_img) = cv2.threshold(half_bin_image, 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)
     show_debug_image(bin_img, row, 2, channel_name + " thresh")
 
-    bin_img = cv2.erode(bin_img, kernel(5))
-    bin_img = cv2.dilate(bin_img, kernel(25))
+    bin_img = cv2.erode(bin_img, ERODE_KERNEL)
+    bin_img = cv2.dilate(bin_img, DILATE_KERNEL)
     # bin_img = cv2.morphologyEx(bin_img, cv2.MORPH_OPEN, kernel(5))
     # bin_img = cv2.morphologyEx(bin_img, cv2.MORPH_CLOSE, kernel(21))
     show_debug_image(bin_img, row, 3, channel_name + " morph")
@@ -93,7 +95,3 @@ def show_result(img, blue_points, red_points):
     )
 
     show_debug_image(result_img, 0, 2, "result")
-
-
-def kernel(size):
-    return np.ones((size, size), np.uint8)
