@@ -1,0 +1,18 @@
+Actions:
+1. gather photo
+	* set optimal parameters
+	* set initial parameters
+2. process photo
+    * improve optimal parameters
+3. transform coordinates
+4. move
+
+Features:
+* shoot photo
+* photo and processing result display and storage
+* AI model processing
+* motion change on demand
+
+Technologies:
+* Spring boot
+*
