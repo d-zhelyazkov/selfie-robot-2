@@ -1,2 +1,2 @@
 pyserial
-opencv3
+opencv-python
