@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 
-import config
+import _config
 import numpy as np
 
 ONE_M = 10 ** 6
@@ -11,7 +11,7 @@ def kernel(size):
 
 
 def debug(message):
-    if not config.debug:
+    if not _config.debug:
         return
 
     print(message)

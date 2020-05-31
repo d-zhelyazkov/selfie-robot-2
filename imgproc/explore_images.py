@@ -3,9 +3,9 @@
 import os
 import sys
 import os.path as path
-import image_processor as improc
-import cv2
-import config
+import _image_processor as improc
+import cv2.cv2 as cv
+import _config
 
 images_path = sys.argv[1]
 image_files = [path.join(images_path, file)
@@ -14,7 +14,7 @@ image_files = [path.join(images_path, file)
 image_count = len(image_files)
 print(image_files)
 
-config.debug = True
+_config.debug = True
 
 i = 0
 while True:
@@ -26,14 +26,14 @@ while True:
     print("BLUE points: " + str(blue_points))
     print("RED points: " + str(red_points))
 
-    key = cv2.waitKey()
+    key = cv.waitKey()
     print("Key pressed: {}".format(key))
     if key == 81 or key == 8:
         # left arrow or backspace
         i -= 1
     elif key == 27:
         # ESC
-        cv2.destroyAllWindows()
+        cv.destroyAllWindows()
         break
     else:
         i += 1

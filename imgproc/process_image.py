@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 
 import sys
-import image_processor as improc
+import _image_processor as improc
 
 
 def main():
