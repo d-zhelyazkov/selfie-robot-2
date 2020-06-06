@@ -22,4 +22,6 @@ RUN python3 -c "import cv2"
 COPY ./imgproc ./imgproc
 COPY ./robot-pics ./robot-pics
 
+COPY ./utils ./utils
+
 ENTRYPOINT "/bin/bash"
