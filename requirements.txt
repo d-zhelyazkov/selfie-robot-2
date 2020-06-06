@@ -1,2 +1,2 @@
-pyserial
-opencv3
+pyserial==3.4
+opencv-python-headless==4.1.1.26

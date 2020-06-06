@@ -1,6 +1,7 @@
 
 \.idea/
 
-src/__pycache__/
+imgproc/__pycache__/
 
-venv/
+.venv/
+.python-version
