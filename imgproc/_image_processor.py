@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+import threading
 
 import math
 import cv2.cv2 as cv
@@ -36,10 +37,28 @@ def process_image(image_path):
     (hue_img, sat_img, value_img) = cv.split(hsv_img)
     show_debug_image(sat_img, 0, 1, "saturation")
 
-    blue_points = process_channel(blue_img, sat_img, 1, "blue")
-    blue_points = convert_points(blue_points, resize_k)
-    red_points = process_channel(red_img, sat_img, 2, "red")
-    red_points = convert_points(red_points, resize_k)
+    blue_points = []
+
+    def process_blue_channel():
+        nonlocal blue_points
+        blue_points = process_channel(blue_img, sat_img, 1, "blue")
+        blue_points = convert_points(blue_points, resize_k)
+
+    blue_thread = threading.Thread(target=process_blue_channel)
+    blue_thread.start()
+
+    red_points = []
+
+    def process_red_channel():
+        nonlocal red_points
+        red_points = process_channel(red_img, sat_img, 2, "red")
+        red_points = convert_points(red_points, resize_k)
+
+    red_thread = threading.Thread(target=process_red_channel)
+    red_thread.start()
+
+    blue_thread.join(10)
+    red_thread.join(10)
 
     show_result(img, blue_points, red_points)
     return blue_points, red_points
