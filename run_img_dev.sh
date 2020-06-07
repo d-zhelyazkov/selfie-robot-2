@@ -21,6 +21,5 @@ fi
 echo "Running image..."
 docker run \
   -it \
-  --privileged \
-  --device=/dev/ttyACM0 \
+  --entrypoint="/bin/bash" \
   "$IMG_NAME"
