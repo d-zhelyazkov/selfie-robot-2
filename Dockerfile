@@ -25,6 +25,7 @@ COPY ./robot-pics ./robot-pics
 
 COPY ./utils ./utils
 
-COPY ./build/libs ./libs
+COPY ./build ./build
+COPY ./start_app.sh ./start_app.sh
 
 ENTRYPOINT "/bin/bash"
