@@ -11,7 +11,8 @@ deb http://deb.debian.org/debian jessie main" >> /etc/apt/sources.list
 RUN apt-get update && apt-get install -y \
 libatlas3-base libwebp6 libtiff5 libjasper1 libilmbase23 libopenexr23 libavcodec58 libavformat58 libavutil56 \
 libswscale5 libgtk-3-0 libpangocairo-1.0-0 libpango-1.0-0 libatk1.0-0 libcairo-gobject2 libcairo2 libgdk-pixbuf2.0-0 \
-openjdk-11-jre-headless
+openjdk-11-jre-headless \
+librxtx-java
 
 ENV PIP_EXTRA_INDEX_URL=https://www.piwheels.org/simple
 COPY ./requirements.txt ./requirements.txt
