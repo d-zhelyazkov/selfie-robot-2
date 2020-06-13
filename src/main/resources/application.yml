@@ -1,0 +1,7 @@
+camera.host: 192.168.137.20
+camera.port: 9001
+
+client.debug: false
+client.timeout: 10000
+
+camera.settings.cache: true

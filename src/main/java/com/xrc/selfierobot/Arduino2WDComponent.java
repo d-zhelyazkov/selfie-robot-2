@@ -10,7 +10,7 @@ import javax.annotation.PostConstruct;
 import javax.annotation.PreDestroy;
 import java.io.IOException;
 
-@Component
+//@Component
 public class Arduino2WDComponent {
 
     private Arduino2WDController controller;

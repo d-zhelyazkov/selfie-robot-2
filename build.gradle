@@ -17,6 +17,7 @@ dependencies {
 	implementation 'org.springframework.boot:spring-boot-starter'
 
 	implementation 'com.xrc.arduino:arduino-2wd-controller:1.0-SNAPSHOT'
+	implementation 'com.xrc:camera-client-spring:1.0'
 
 	testImplementation('org.springframework.boot:spring-boot-starter-test') {
 		exclude group: 'org.junit.vintage', module: 'junit-vintage-engine'
