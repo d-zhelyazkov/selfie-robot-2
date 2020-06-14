@@ -1,13 +1,8 @@
 package com.xrc.selfierobot;
 
-import com.xrc.camera.Camera;
-import com.xrc.camera.model.Setting;
 import org.springframework.boot.ApplicationArguments;
 import org.springframework.boot.ApplicationRunner;
 import org.springframework.stereotype.Component;
-
-import java.awt.image.BufferedImage;
-import java.util.Set;
 
 @Component
 public class AppStartupRunner implements ApplicationRunner {
@@ -19,11 +14,11 @@ public class AppStartupRunner implements ApplicationRunner {
 //            .build();
 //    private final Arduino2WDComponent arduino2WDComponent;
 
-    private final Camera camera;
-
-    public AppStartupRunner(Camera camera) {
-        this.camera = camera;
-    }
+//    private final Camera camera;
+//
+//    public AppStartupRunner(Camera camera) {
+//        this.camera = camera;
+//    }
 
     @Override
     public void run(ApplicationArguments args) throws Exception {
@@ -33,12 +28,13 @@ public class AppStartupRunner implements ApplicationRunner {
 //                    .execute();
 //
 //        }
+//
+//        Set<Setting> supportedSettings = this.camera.getSupportedSettings();
+//        System.out.println(supportedSettings);
+//
+//        BufferedImage image = this.camera.getImage();
+//        System.out.println(String.format("Image size: %dx%d", image.getWidth(), image.getHeight()));
 
-        Set<Setting> supportedSettings = this.camera.getSupportedSettings();
-        System.out.println(supportedSettings);
-
-        BufferedImage image = this.camera.getImage();
-        System.out.println(String.format("Image size: %dx%d", image.getWidth(), image.getHeight()));
 
     }
 }
