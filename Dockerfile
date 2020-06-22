@@ -28,5 +28,8 @@ COPY ./utils ./utils
 
 COPY ./build ./build
 COPY ./start_app.sh ./start_app.sh
+COPY ./start_app_debug.sh ./start_app_debug.sh
+
+EXPOSE 8000
 
 ENTRYPOINT "/bin/bash"

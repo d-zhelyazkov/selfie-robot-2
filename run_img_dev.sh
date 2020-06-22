@@ -21,5 +21,6 @@ fi
 echo "Running image..."
 docker run \
   -it \
+  --network host \
   --entrypoint="/bin/bash" \
   "$IMG_NAME"
