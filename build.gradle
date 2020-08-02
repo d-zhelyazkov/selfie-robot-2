@@ -15,6 +15,9 @@ repositories {
 
 dependencies {
 	implementation 'org.springframework.boot:spring-boot-starter'
+	compileOnly 'org.projectlombok:lombok'
+	annotationProcessor 'org.projectlombok:lombok'
+	implementation 'org.slf4j:slf4j-api'
 
 	implementation 'com.xrc.arduino:arduino-2wd-controller:1.0-SNAPSHOT'
 	implementation 'com.xrc:camera-client-spring:1.0'
