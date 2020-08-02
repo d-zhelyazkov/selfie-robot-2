@@ -1,17 +1,13 @@
 package com.xrc.selfierobot;
 
-import com.xrc.awt.geom.Point2D;
+import com.xrc.camera.Camera;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.ApplicationArguments;
 import org.springframework.boot.ApplicationRunner;
 import org.springframework.stereotype.Component;
 
+import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Scanner;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 @Slf4j
 @Component
@@ -24,36 +20,34 @@ public class AppStartupRunner implements ApplicationRunner {
 //            .build();
 //    private final Arduino2WDComponent arduino2WDComponent;
 
-//    private final Camera camera;
-//
-//    public AppStartupRunner(Camera camera) {
-//        this.camera = camera;
-//    }
+    private final Camera camera;
 
     private final ImgProcessor imgProcessor;
 
-    public AppStartupRunner(ImgProcessor imgProcessor) {
+    public AppStartupRunner(Camera camera, ImgProcessor imgProcessor) {
+        this.camera = camera;
         this.imgProcessor = imgProcessor;
     }
 
     @Override
     public void run(ApplicationArguments args) throws Exception {
-//        //noinspection InfiniteLoopStatement
-//        while (true) {
 //            new MotionCommandTask(arduino2WDComponent.getController(), DUMMY_COMMAND, DURATION_10S)
 //                    .execute();
-//
-//        }
-//
-//        Set<Setting> supportedSettings = this.camera.getSupportedSettings();
-//        System.out.println(supportedSettings);
-//
+
+
 //        BufferedImage image = this.camera.getImage();
-//        System.out.println(String.format("Image size: %dx%d", image.getWidth(), image.getHeight()));
+//        log.info(String.format("Image size: %dx%d", image.getWidth(), image.getHeight()));
 
-        Dots dots =
-                imgProcessor.process(Path.of("robot-pics/darkened.jpg"));
+        //noinspection InfiniteLoopStatement
+        while (true) {
+            log.info("Obtaining camera image...");
+            Path imageFile = Path.of("camera_image.jpg");
+            Files.write(imageFile, camera.getSwaggerApi().imageGet());
+            log.info("Camera image obtained - " + imageFile);
 
+
+            imgProcessor.process(imageFile);
+        }
 
     }
 
