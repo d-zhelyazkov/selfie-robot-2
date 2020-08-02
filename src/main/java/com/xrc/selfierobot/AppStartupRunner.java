@@ -1,9 +1,19 @@
 package com.xrc.selfierobot;
 
+import com.xrc.awt.geom.Point2D;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.ApplicationArguments;
 import org.springframework.boot.ApplicationRunner;
 import org.springframework.stereotype.Component;
 
+import java.nio.file.Path;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Scanner;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+
+@Slf4j
 @Component
 public class AppStartupRunner implements ApplicationRunner {
 
@@ -20,9 +30,15 @@ public class AppStartupRunner implements ApplicationRunner {
 //        this.camera = camera;
 //    }
 
+    private final ImgProcessor imgProcessor;
+
+    public AppStartupRunner(ImgProcessor imgProcessor) {
+        this.imgProcessor = imgProcessor;
+    }
+
     @Override
     public void run(ApplicationArguments args) throws Exception {
-        //noinspection InfiniteLoopStatement
+//        //noinspection InfiniteLoopStatement
 //        while (true) {
 //            new MotionCommandTask(arduino2WDComponent.getController(), DUMMY_COMMAND, DURATION_10S)
 //                    .execute();
@@ -35,6 +51,10 @@ public class AppStartupRunner implements ApplicationRunner {
 //        BufferedImage image = this.camera.getImage();
 //        System.out.println(String.format("Image size: %dx%d", image.getWidth(), image.getHeight()));
 
+        Dots dots =
+                imgProcessor.process(Path.of("robot-pics/darkened.jpg"));
+
 
     }
+
 }
