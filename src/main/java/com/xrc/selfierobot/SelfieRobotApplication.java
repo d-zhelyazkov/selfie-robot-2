@@ -3,9 +3,10 @@ package com.xrc.selfierobot;
 import gnu.io.NoSuchPortException;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
+import org.springframework.context.annotation.ComponentScan;
 
 @SpringBootApplication
-//@ComponentScan("com.xrc.*")
+@ComponentScan("com.xrc.*")
 public class SelfieRobotApplication {
 
 	public static void main(String[] args) throws NoSuchPortException {
