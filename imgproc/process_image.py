@@ -1,19 +1,24 @@
 #!/usr/bin/env python3
 
 import sys
-import _image_processor as improc
+
+import cv2.cv2 as cv
+
+import image_processor as improc
 
 
 def main():
-    image_path = sys.argv[1]
+    image_file = sys.argv[1]
 
-    (blue_points, red_points) = improc.process_image(image_path)
+    img = cv.imread(image_file, cv.IMREAD_COLOR)
 
-    print_points(blue_points)
-    print_points(red_points)
+    (blue_points, red_points) = improc.process(img)
+
+    output_points(blue_points)
+    output_points(red_points)
 
 
-def print_points(points):
+def output_points(points):
     for point in points:
         print("[{},{}]".format(point[0], point[1]), end=' ')
     print(end='\n')

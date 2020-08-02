@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 
 import cv2.cv2 as cv
-import _config
+import imgproc._config as config
 
 WIN_SIZE = (400, 300)
 
@@ -16,7 +16,7 @@ def show_image(img, row, col, win_name):
 
 
 def show_debug_image(img, row, col, win_name):
-    if not _config.debug:
+    if not config.debug:
         return
 
     show_image(img, row, col, win_name)

@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 
-import _config
+import imgproc._config as config
 import numpy as np
 
 ONE_M = 10 ** 6
@@ -11,7 +11,7 @@ def kernel(size):
 
 
 def debug(message):
-    if not _config.debug:
+    if not config.debug:
         return
 
     print(message)

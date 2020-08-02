@@ -1,12 +1,12 @@
 #!/usr/bin/env python3
+import math
 import threading
 
-import math
 import cv2.cv2 as cv
 
-from _windows import show_debug_image
-from _utils import *
-import _config
+import imgproc._config as config
+from imgproc._utils import *
+from imgproc._windows import show_debug_image
 
 GREEN_COLOR = (0, 255, 0)
 RED_COLOR = (0, 0, 255)
@@ -25,8 +25,7 @@ blob_detector_params.blobColor = 255
 blob_detector = cv.SimpleBlobDetector_create(blob_detector_params)
 
 
-def process_image(image_path):
-    img = cv.imread(image_path, cv.IMREAD_COLOR)
+def process(img):
     show_debug_image(img, 0, 0, "image")
 
     (resized_img, resize_k) = resize_image(img)
@@ -111,7 +110,7 @@ def resize_image(img):
 
 
 def show_result(img, blue_points, red_points):
-    if not _config.debug:
+    if not config.debug:
         return
 
     result_img = img.copy()

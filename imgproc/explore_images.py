@@ -3,7 +3,7 @@
 import os
 import sys
 import os.path as path
-import _image_processor as improc
+import image_processor as improc
 import cv2.cv2 as cv
 import _config
 
@@ -22,7 +22,8 @@ while True:
     image_file = image_files[i]
     print(image_file)
 
-    (blue_points, red_points) = improc.process_image(image_file)
+    img = cv.imread(image_file, cv.IMREAD_COLOR)
+    (blue_points, red_points) = improc.process(img)
     print("BLUE points: " + str(blue_points))
     print("RED points: " + str(red_points))
 
