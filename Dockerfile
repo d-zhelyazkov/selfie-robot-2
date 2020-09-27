@@ -24,4 +24,6 @@ COPY ./robot-pics ./robot-pics
 
 COPY ./utils ./utils
 
+ENV PYTHONPATH=$PROJ_DIR:$PYTHONPATH
+
 ENTRYPOINT "/bin/bash"
