@@ -20,6 +20,7 @@ ENV LD_PRELOAD=/usr/lib/arm-linux-gnueabihf/libatomic.so.1
 RUN python3 -c "import cv2"
 
 COPY ./imgproc ./imgproc
+COPY ./camera ./camera
 COPY ./robot-pics ./robot-pics
 
 COPY ./utils ./utils
