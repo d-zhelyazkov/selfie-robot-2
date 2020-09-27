@@ -38,3 +38,5 @@ out/
 .vscode/
 
 *.pyc
+
+camera_image.png
