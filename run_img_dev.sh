@@ -21,12 +21,17 @@ else
   echo "Registry not available. Will run local image."
 fi
 
+export DISPLAY=:0
+xhost +
+
 echo "Running image..."
 docker run \
   -it \
   --network host \
   --privileged \
   --device=/dev/ttyACM0 \
+  -e DISPLAY="$DISPLAY" \
+  -v /tmp/.X11-unix:/tmp/.X11-unix \
   --volume "$PROJECT_DIR:/opt/selfie-robot/" \
   --entrypoint="/bin/bash" \
   "$IMG_NAME"

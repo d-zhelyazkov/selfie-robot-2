@@ -21,10 +21,12 @@ RUN python3 -c "import cv2"
 
 COPY ./imgproc ./imgproc
 COPY ./camera ./camera
+COPY ./src/ ./src/
+
 COPY ./robot-pics ./robot-pics
 
 COPY ./utils ./utils
 
-ENV PYTHONPATH=$PROJ_DIR:$PYTHONPATH
+ENV PYTHONPATH=$PROJ_DIR/src/:$PROJ_DIR
 
-ENTRYPOINT "/bin/bash"
+ENTRYPOINT "/opt/selfie-robot/src/main.py"
