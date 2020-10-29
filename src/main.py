@@ -9,6 +9,7 @@ from urllib3 import HTTPResponse
 
 import camera
 from camera import AEModeValue, AEMode, ISOValue, ShutterSpeedValue
+from camera import AELockValue
 from imgproc import image_processor as imgproc
 from tools import show_image, draw_points, init_window
 
@@ -20,16 +21,16 @@ log.basicConfig(
 init_window("result")
 
 camera_config = camera.Configuration()
-camera_config.host = "192.168.137.20:9001/camera"
+camera_config.host = "192.168.137.21:9001/camera"
 # camera_config.debug = True
 camera_api = camera.DefaultApi(camera.ApiClient(camera_config))
 # create an instance of the API class
 
 # camera_api.settings_aecompensation_put(AECompensationValue(-2.0))
-# camera_api.settings_aelock_put(AELockValue(True))
-camera_api.settings_aemode_put(AEModeValue(AEMode.OFF))
-camera_api.settings_iso_put(ISOValue(50))
-camera_api.settings_shutterspeed_put(body=ShutterSpeedValue(100000))
+camera_api.settings_aelock_put(AELockValue(True))
+# camera_api.settings_aemode_put(AEModeValue(AEMode.OFF))
+# camera_api.settings_iso_put(ISOValue(50))
+# camera_api.settings_shutterspeed_put(body=ShutterSpeedValue(100000))
 
 images = rx_subj.Subject()
 processed_imgs = rx_subj.Subject()
