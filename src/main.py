@@ -8,7 +8,7 @@ import rx.subject as rx_subj
 from urllib3 import HTTPResponse
 
 import camera
-from camera import AEModeValue, AEMode, ISOValue, ShutterSpeedValue
+import threads
 from camera import AELockValue
 from imgproc import image_processor as imgproc
 from tools import show_image, draw_points, init_window
@@ -34,6 +34,12 @@ camera_api.settings_aelock_put(AELockValue(True))
 
 images = rx_subj.Subject()
 processed_imgs = rx_subj.Subject()
+latest_result = (np.ndarray(()), ([], []))
+
+
+def set_latest(result):
+    global latest_result
+    latest_result = result
 
 
 def show_result(img, points):
@@ -47,22 +53,32 @@ images.pipe(
     rx_ops.map(lambda img: (img, imgproc.process(img)))
 ).subscribe(processed_imgs)
 processed_imgs.subscribe(
-    on_next=lambda result: show_result(*result))
-processed_imgs.subscribe(
     on_next=lambda result: log.info(
         f"Img processed. Found {len(result[1][0])} blue and {len(result[1][1])} red points")
 )
+processed_imgs.subscribe(on_next=set_latest)
+
+
+def process():
+    response: HTTPResponse = camera_api.image_get(_preload_content=False)
+
+    np_arr = np.frombuffer(response.data, np.uint8)
+    img = cv.imdecode(np_arr, cv.IMREAD_COLOR)
+
+    images.on_next(img)
 
 
 def main():
-    while True:
-        # Get image.
-        response: HTTPResponse = camera_api.image_get(_preload_content=False)
+    with \
+            threads.RepeatingTimer(
+                function=process,
+                interval=0,
+                name="ProcessThread",
+            ) as process_thread:
+        process_thread.start()
 
-        np_arr = np.frombuffer(response.data, np.uint8)
-        img = cv.imdecode(np_arr, cv.IMREAD_COLOR)
-
-        images.on_next(img)
+        while True:
+            show_result(*latest_result)
 
 
 if __name__ == "__main__":
