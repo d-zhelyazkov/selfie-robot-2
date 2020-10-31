@@ -3,11 +3,10 @@ import logging as log
 
 import cv2.cv2 as cv
 import numpy as np
-import rx.operators as rx_ops
-import rx.subject as rx_subj
 from urllib3 import HTTPResponse
 
 import camera
+import reactives
 import threads
 from camera import AELockValue
 from imgproc import image_processor as imgproc
@@ -32,14 +31,11 @@ camera_api.settings_aelock_put(AELockValue(True))
 # camera_api.settings_iso_put(ISOValue(50))
 # camera_api.settings_shutterspeed_put(body=ShutterSpeedValue(100000))
 
-images = rx_subj.Subject()
-processed_imgs = rx_subj.Subject()
-latest_result = (np.ndarray(()), ([], []))
+images = reactives.Subject()
+images.last = np.ndarray(())
 
-
-def set_latest(result):
-    global latest_result
-    latest_result = result
+processed_imgs = reactives.Subject()
+processed_imgs.last = (images.last, ([], []))
 
 
 def show_result(img, points):
@@ -47,38 +43,47 @@ def show_result(img, points):
     show_image(draw_points(img, blue_points + red_points), "result")
 
 
-images.subscribe(on_next=lambda img: log.info(
-    f"Image size: {img.shape[:2]}"))
-images.pipe(
-    rx_ops.map(lambda img: (img, imgproc.process(img)))
-).subscribe(processed_imgs)
-processed_imgs.subscribe(
-    on_next=lambda result: log.info(
-        f"Img processed. Found {len(result[1][0])} blue and {len(result[1][1])} red points")
-)
-processed_imgs.subscribe(on_next=set_latest)
-
-
-def process():
+def image():
     response: HTTPResponse = camera_api.image_get(_preload_content=False)
 
     np_arr = np.frombuffer(response.data, np.uint8)
     img = cv.imdecode(np_arr, cv.IMREAD_COLOR)
+    log.debug("Image size: %s", img.shape[:2])
 
     images.on_next(img)
+
+
+def process():
+    if np.array_equal(images.last, processed_imgs.last[0]):
+        images.wait_next()
+
+    result = imgproc.process(images.last)
+    (blue_dots, red_dots) = result
+    log.info("Img processed. Found %d blue and %d red points", len(blue_dots), len(red_dots))
+    processed_imgs.on_next((images.last, (blue_dots, red_dots)))
 
 
 def main():
     with \
             threads.RepeatingTimer(
+                function=image,
+                interval=0,
+                name="ImgThread",
+            ) as img_thread, \
+            threads.RepeatingTimer(
                 function=process,
                 interval=0,
                 name="ProcessThread",
             ) as process_thread:
+        img_thread.start()
         process_thread.start()
 
         while True:
-            show_result(*latest_result)
+            processed_imgs.wait_next()
+            show_result(*processed_imgs.last)
+
+        # process_thread.join()
+        # img_thread.join()
 
 
 if __name__ == "__main__":
