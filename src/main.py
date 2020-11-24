@@ -5,6 +5,7 @@ import cv2.cv2 as cv
 import numpy as np
 from urllib3 import HTTPResponse
 
+import booleans
 import camera
 import reactives
 import threads
@@ -16,7 +17,10 @@ log.basicConfig(
     format='%(asctime)s %(message)s',
 )
 
-init_window("result")
+GUI = booleans.env("GUI", False)
+
+if GUI:
+    init_window("result")
 
 camera_config = camera.Configuration()
 camera_config.host = "192.168.137.20:9001/camera"
@@ -51,38 +55,40 @@ def image():
 
     images.on_next(img)
 
+    return img
+
 
 def process():
-    if np.array_equal(images.last, processed_imgs.last[0]):
-        images.wait_next()
+    img = image()
 
-    result = imgproc.process(images.last)
+    result = imgproc.process(img)
     (blue_dots, red_dots) = result
     log.info("Img processed. Found %d blue and %d red points", len(blue_dots), len(red_dots))
-    processed_imgs.on_next((images.last, (blue_dots, red_dots)))
+    processed_imgs.on_next((img, (blue_dots, red_dots)))
+
+
+def display():
+    processed_imgs.wait_next()
+    show_result(*processed_imgs.last)
 
 
 def main():
     with \
             threads.RepeatingTimer(
-                function=image,
-                interval=0,
-                name="ImgThread",
-            ) as img_thread, \
-            threads.RepeatingTimer(
                 function=process,
                 interval=0,
                 name="ProcessThread",
-            ) as process_thread:
-        img_thread.start()
+            ) as process_thread, \
+            threads.RepeatingTimer(
+                function=display,
+                interval=0,
+            ) as display_timer:
         process_thread.start()
 
-        while True:
-            processed_imgs.wait_next()
-            show_result(*processed_imgs.last)
+        if GUI:
+            display_timer.run()
 
-        # process_thread.join()
-        # img_thread.join()
+        process_thread.join()
 
 
 if __name__ == "__main__":
