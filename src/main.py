@@ -22,6 +22,7 @@ if GUI:
 
 processed_imgs = reactives.Subject()
 processed_imgs.last = (cam_srv.images.last, ([], []))
+processed_imgs.subscribe(cam_srv.ParamOptimizer())
 
 
 def show_result(img, points):

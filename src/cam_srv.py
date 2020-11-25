@@ -1,6 +1,7 @@
 import logging as log
 
 import numpy as np
+import rx.core as rx
 from cv2 import cv2 as cv
 from urllib3 import HTTPResponse
 
@@ -34,3 +35,38 @@ def image():
     images.on_next(img)
 
     return img
+
+
+class ParamOptimizer(rx.Observer):
+
+    def __init__(self):
+        super().__init__()
+
+        camera_api.settings_aemode_put(camera.AEModeValue(camera.AEMode.OFF
+                                                          ))
+
+    def on_next(self, processing_result) -> None:
+        (_, points) = processing_result
+        (blue_points, red_points) = points
+        points_cnt = len(blue_points) + len(red_points)
+        if points_cnt == 3:
+            return
+
+        if points_cnt < 3:
+            self.increase_exposure()
+        elif points_cnt > 3:
+            self.decrease_exposure()
+
+    @staticmethod
+    def increase_exposure():
+        iso: camera.ISOInfo = camera_api.settings_iso_get()
+        new_iso = int(iso.value) * 2
+        if new_iso <= int(iso.values[-1]):
+            camera_api.settings_iso_put(camera.ISOValue(str(new_iso)))
+
+    @staticmethod
+    def decrease_exposure():
+        iso: camera.ISOInfo = camera_api.settings_iso_get()
+        new_iso = int(int(iso.value) / 2)
+        if int(iso.values[0]) <= new_iso:
+            camera_api.settings_iso_put(camera.ISOValue(str(new_iso)))
