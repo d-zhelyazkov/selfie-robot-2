@@ -13,18 +13,19 @@ from __future__ import absolute_import
 import datetime
 import json
 import mimetypes
-from multiprocessing.pool import ThreadPool
 import os
 import re
 import tempfile
+from multiprocessing.pool import ThreadPool
 
 # python 2 and python 3 compatibility library
+import backoff
 import six
 from six.moves.urllib.parse import quote
 
-from camera.configuration import Configuration
 import camera.models
 from camera import rest
+from camera.configuration import Configuration
 
 
 class ApiClient(object):
@@ -90,6 +91,11 @@ class ApiClient(object):
     def set_default_header(self, header_name, header_value):
         self.default_headers[header_name] = header_value
 
+    @backoff.on_exception(
+        wait_gen=backoff.expo,
+        exception=rest.ApiException,
+        max_tries=5,
+    )
     def __call_api(
             self, resource_path, method, path_params=None,
             query_params=None, header_params=None, body=None, post_params=None,
