@@ -2,6 +2,7 @@ import logging as log
 
 import numpy as np
 import rx.core as rx
+import urllib3
 from cv2 import cv2 as cv
 from urllib3 import HTTPResponse
 
@@ -10,6 +11,11 @@ import reactives
 
 camera_config = camera.Configuration()
 camera_config.host = "192.168.137.20:9001/camera"
+camera_config.timeout = urllib3.Timeout(connect=1, read=2)
+
+# camera_config.retry = urllib3.Retry(total=5, backoff_factor=0.1)
+# camera_config.retry.RETRY_AFTER_STATUS_CODES = list(urllib3.Retry.RETRY_AFTER_STATUS_CODES) + [422]
+
 # camera_config.debug = True
 camera_api = camera.DefaultApi(camera.ApiClient(camera_config))
 # create an instance of the API class

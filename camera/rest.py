@@ -90,6 +90,8 @@ class RESTClientObject(object):
                 ca_certs=ca_certs,
                 cert_file=configuration.cert_file,
                 key_file=configuration.key_file,
+                timeout=configuration.timeout,
+                retries=configuration.retry,
                 proxy_url=configuration.proxy,
                 **addition_pool_args
             )
@@ -101,6 +103,8 @@ class RESTClientObject(object):
                 ca_certs=ca_certs,
                 cert_file=configuration.cert_file,
                 key_file=configuration.key_file,
+                timeout=configuration.timeout,
+                retries=configuration.retry,
                 **addition_pool_args
             )
 
@@ -145,6 +149,8 @@ class RESTClientObject(object):
                   len(_request_timeout) == 2):
                 timeout = urllib3.Timeout(
                     connect=_request_timeout[0], read=_request_timeout[1])
+            elif isinstance(_request_timeout, urllib3.Timeout):
+                timeout = _request_timeout
 
         if 'Content-Type' not in headers:
             headers['Content-Type'] = 'application/json'

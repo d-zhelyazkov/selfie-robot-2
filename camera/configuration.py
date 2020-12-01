@@ -16,6 +16,8 @@ import copy
 import logging
 import multiprocessing
 import sys
+from typing import Optional
+
 import urllib3
 
 import six
@@ -100,6 +102,9 @@ class Configuration(six.with_metaclass(TypeWithDefault, object)):
         self.proxy = None
         # Safe chars for path_param
         self.safe_chars_for_path_param = ''
+
+        self.timeout: Optional[urllib3.Timeout] = None
+        self.retry: Optional[urllib3.Retry] = None
 
     @property
     def logger_file(self):

@@ -318,6 +318,10 @@ class ApiClient(object):
             If parameter async_req is False or missing,
             then the method will return the response directly.
         """
+
+        if not _request_timeout:
+            _request_timeout = self.configuration.timeout
+
         if not async_req:
             return self.__call_api(resource_path, method,
                                    path_params, query_params, header_params,
