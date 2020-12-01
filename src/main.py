@@ -11,7 +11,7 @@ from tools import show_image, draw_points, init_window
 
 log.basicConfig(
     level=log.DEBUG,
-    format='%(asctime)s %(message)s',
+    format="[%(asctime)s] [%(name)s] %(message)s",
 )
 
 GUI = booleans.env("GUI", False)
