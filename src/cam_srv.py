@@ -10,7 +10,7 @@ import camera
 import reactives
 
 camera_config = camera.Configuration()
-camera_config.host = "192.168.137.20:9001/camera"
+camera_config.host = "192.168.137.22:9001/camera"
 camera_config.timeout = urllib3.Timeout(connect=1, read=2)
 
 # camera_config.retry = urllib3.Retry(total=5, backoff_factor=0.1)
