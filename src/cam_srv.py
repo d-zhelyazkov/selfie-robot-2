@@ -9,6 +9,7 @@ from urllib3 import HTTPResponse
 
 import camera
 import reactives
+from tools import do_random_task
 
 camera_config = camera.Configuration()
 camera_config.host = "192.168.137.22:9001/camera"
@@ -67,20 +68,24 @@ class ParamOptimizer(rx.Observer):
             self.decrease_exposure()
 
     def increase_exposure(self):
-        if self.iso.increase():
-            self.ss.reset_history()
-        elif self.ss.decrease():
-            self.iso.reset_history()
+        if do_random_task([
+            self.iso.increase,
+            self.ss.decrease,
+        ]):
+            return True
         else:
             log.warning("Cannot increase exposure...")
+            return False
 
     def decrease_exposure(self):
-        if self.iso.decrease():
-            self.ss.reset_history()
-        elif self.ss.increase():
-            self.iso.reset_history()
+        if do_random_task([
+            self.iso.decrease,
+            self.ss.increase,
+        ]):
+            return True
         else:
             log.warning("Cannot decrease exposure...")
+            return False
 
 
 class Setting:
@@ -99,8 +104,8 @@ class Setting:
 
     def set(self, new_val):
         curr_val = self.value
-        if new_val in [curr_val, self.last_val]:
-        # if new_val in [curr_val]:
+        # if new_val in [curr_val, self.last_val]:
+        if new_val in [curr_val]:
             return False
 
         log.info(f"Changing {self.setting} from {curr_val} to {new_val}")

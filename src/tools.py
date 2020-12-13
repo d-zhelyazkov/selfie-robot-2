@@ -1,3 +1,5 @@
+import random
+
 import numpy as np
 from cv2 import cv2 as cv
 
@@ -41,3 +43,17 @@ def draw_points(img, points):
         )
 
     return result_img
+
+
+def do_random_task(tasks: list):
+    if len(tasks) == 0:
+        return False
+
+    task = random.choice(tasks)
+    result = task()
+
+    if not isinstance(result, bool) or result is True:
+        return result
+    else:
+        return do_random_task([task_ for task_ in tasks
+                               if task_ is not task])
