@@ -1,4 +1,5 @@
 import logging as log
+import math
 
 import numpy as np
 import rx.core as rx
@@ -47,32 +48,117 @@ class ParamOptimizer(rx.Observer):
 
     def __init__(self):
         super().__init__()
+        camera_api.settings_aemode_put(camera.AEModeValue(camera.AEMode.OFF))
 
-        camera_api.settings_aemode_put(camera.AEModeValue(camera.AEMode.OFF
-                                                          ))
+        self.iso = ISOSetting()
+        self.ss = SSSetting()
 
     def on_next(self, processing_result) -> None:
         (_, points) = processing_result
         (blue_points, red_points) = points
-        points_cnt = len(blue_points) + len(red_points)
-        if points_cnt == 3:
+        blue_cnt = len(blue_points)
+        red_cnt = len(red_points)
+        if blue_cnt == 2 and red_cnt == 1:
             return
 
-        if points_cnt < 3:
+        if blue_cnt < 2 or red_cnt < 1:
             self.increase_exposure()
-        elif points_cnt > 3:
+        else:
             self.decrease_exposure()
 
-    @staticmethod
-    def increase_exposure():
-        iso: camera.ISOInfo = camera_api.settings_iso_get()
-        new_iso = int(iso.value) * 2
-        if new_iso <= int(iso.values[-1]):
-            camera_api.settings_iso_put(camera.ISOValue(str(new_iso)))
+    def increase_exposure(self):
+        if self.iso.increase():
+            self.ss.reset_history()
+        elif self.ss.decrease():
+            self.iso.reset_history()
+        else:
+            log.warning("Cannot increase exposure...")
 
-    @staticmethod
-    def decrease_exposure():
-        iso: camera.ISOInfo = camera_api.settings_iso_get()
-        new_iso = int(int(iso.value) / 2)
-        if int(iso.values[0]) <= new_iso:
-            camera_api.settings_iso_put(camera.ISOValue(str(new_iso)))
+    def decrease_exposure(self):
+        if self.iso.decrease():
+            self.ss.reset_history()
+        elif self.ss.increase():
+            self.iso.reset_history()
+        else:
+            log.warning("Cannot decrease exposure...")
+
+
+class Setting:
+    def __init__(self, setting):
+        self.setting = setting
+        self.info = camera_api.settings_setting_get(setting)
+        self._value = self.info.value
+        self.init_val = self.value
+        self.last_val = None
+
+    @property
+    def value(self):
+        # self.info = camera_api.settings_setting_get(self.setting)
+        # return self.info.value
+        return self._value
+
+    def set(self, new_val):
+        curr_val = self.value
+        if new_val in [curr_val, self.last_val]:
+        # if new_val in [curr_val]:
+            return False
+
+        log.info(f"Changing {self.setting} from {curr_val} to {new_val}")
+        camera_api.settings_setting_put(
+            camera.SettingValue(str(new_val)),
+            self.setting
+        )
+        self.last_val = curr_val
+        self._value = new_val
+        return True
+
+    def reset(self):
+        self.set(self.init_val)
+        self.reset_history()
+
+    def reset_history(self):
+        self.last_val = None
+
+
+class ISOSetting(Setting):
+
+    def __init__(self):
+        super().__init__(camera.Setting.ISO)
+        self.min_val = int(self.info.values[0])
+        self.max_val = int(int(self.info.values[-1]) / 2)
+
+    @property
+    def value(self):
+        return int(super().value)
+
+    def increase(self):
+        new_iso = self.value * 2
+        new_iso = min(new_iso, self.max_val)
+        return self.set(new_iso)
+
+    def decrease(self):
+        new_iso = int(self.value / 2)
+        new_iso = max(new_iso, self.min_val)
+        return self.set(new_iso)
+
+
+class SSSetting(Setting):
+
+    def __init__(self):
+        super().__init__(camera.Setting.SHUTTER_SPEED)
+        self.min_val = int(self.info.values[0])
+        self.max_val = 10 ** (int(math.log10(int(self.info.values[-1]))) - 1)
+
+    @property
+    def value(self):
+        return int(super().value)
+
+    def increase(self):
+        new_ss = 10 ** (int(math.log10(self.value)) - 1)
+        new_ss = max(new_ss, self.min_val)
+        return self.set(new_ss)
+
+    def decrease(self):
+        new_ss = 10 ** (int(math.log10(self.value)) + 1)
+        new_ss = min(new_ss, self.max_val)
+        return self.set(new_ss)
