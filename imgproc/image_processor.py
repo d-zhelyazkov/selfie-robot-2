@@ -1,13 +1,11 @@
 #!/usr/bin/env python3
 import math
-import threading
 
 import cv2.cv2 as cv
 import concurrent.futures
 
-import imgproc.config as config
-from imgproc._utils import *
-from imgproc._windows import show_debug_image
+from _utils import *
+from _windows import show_debug_image
 
 GREEN_COLOR = (0, 255, 0)
 RED_COLOR = (0, 0, 255)

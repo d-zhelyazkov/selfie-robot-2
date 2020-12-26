@@ -1,11 +1,15 @@
 #!/usr/bin/env python3
 
 import os
-import sys
 import os.path as path
-import image_processor as improc
+import sys
+
 import cv2.cv2 as cv
+
+import image_processor
 import config
+
+config.debug = True
 
 images_path = sys.argv[1]
 image_files = [path.join(images_path, file)
@@ -14,8 +18,6 @@ image_files = [path.join(images_path, file)
 image_count = len(image_files)
 print(image_files)
 
-config.debug = True
-
 i = 0
 while True:
     i %= image_count
@@ -23,7 +25,7 @@ while True:
     print(image_file)
 
     img = cv.imread(image_file, cv.IMREAD_COLOR)
-    (blue_points, red_points) = improc.process(img)
+    (blue_points, red_points) = image_processor.process(img)
     print("BLUE points: " + str(blue_points))
     print("RED points: " + str(red_points))
 

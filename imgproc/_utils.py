@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 
-import imgproc.config as config
+import config
 import numpy as np
 
 ONE_M = 10 ** 6
