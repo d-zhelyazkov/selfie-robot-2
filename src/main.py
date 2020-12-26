@@ -6,6 +6,7 @@ import booleans
 import reactives
 import threads
 import cam_srv
+import imgproc.config
 from imgproc import image_processor as imgproc
 from tools import show_image, draw_points, init_window
 
@@ -19,6 +20,7 @@ GUI = booleans.env("GUI", False)
 if GUI:
     init_window("result")
 
+imgproc.config.debug = False
 
 processed_imgs = reactives.Subject()
 processed_imgs.last = (cam_srv.images.last, ([], []))
