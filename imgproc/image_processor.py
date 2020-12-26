@@ -3,8 +3,9 @@ import math
 import threading
 
 import cv2.cv2 as cv
+import concurrent.futures
 
-import imgproc._config as config
+import imgproc.config as config
 from imgproc._utils import *
 from imgproc._windows import show_debug_image
 
@@ -36,31 +37,39 @@ def process(img):
     (hue_img, sat_img, value_img) = cv.split(hsv_img)
     show_debug_image(sat_img, 0, 1, "saturation")
 
-    blue_points = []
-
     def process_blue_channel():
-        nonlocal blue_points
-        blue_points = process_channel(blue_img, sat_img, 1, "blue")
-        blue_points = convert_points(blue_points, resize_k)
-
-    blue_thread = threading.Thread(target=process_blue_channel)
-    blue_thread.start()
-
-    red_points = []
+        return process_channel(blue_img, sat_img, 1, "blue")
 
     def process_red_channel():
-        nonlocal red_points
-        red_points = process_channel(red_img, sat_img, 2, "red")
-        red_points = convert_points(red_points, resize_k)
+        return process_channel(red_img, sat_img, 2, "red")
 
-    red_thread = threading.Thread(target=process_red_channel)
-    red_thread.start()
+    tasks = (process_blue_channel, process_red_channel)
 
-    blue_thread.join(10)
-    red_thread.join(10)
+    multithreading = not config.debug
+    if multithreading:
+        with concurrent.futures.ThreadPoolExecutor() as executor:
+            futures = list(map(
+                lambda task: executor.submit(task),
+                tasks,
+            ))
 
-    show_result(img, blue_points, red_points)
-    return blue_points, red_points
+            points_sets = list(map(
+                lambda future: future.result(),
+                futures,
+            ))
+    else:
+        points_sets = list(map(
+            lambda task: task(),
+            tasks,
+        ))
+
+    points_sets = list(map(
+        lambda point_set: convert_points(point_set, resize_k),
+        points_sets,
+    ))
+
+    show_result(img, *points_sets)
+    return points_sets
 
 
 def process_channel(ch_img, sat_img, row, channel_name):
