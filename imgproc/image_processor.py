@@ -116,6 +116,10 @@ def resize_image(img):
     return resized_image, k
 
 
+def are_robot_points(blue_points, red_points):
+    return len(blue_points) == 2 and len(red_points) == 1
+
+
 def show_result(img, blue_points, red_points):
     if not config.debug:
         return
@@ -135,7 +139,7 @@ def show_result(img, blue_points, red_points):
             line_type=cv.LINE_AA
         )
 
-    success = len(blue_points) == 2 and len(red_points) == 1
+    success = are_robot_points(blue_points,red_points)
     border_color = GREEN_COLOR if success else RED_COLOR
     result_img = cv.copyMakeBorder(
         src=result_img,
