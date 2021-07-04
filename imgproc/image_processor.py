@@ -11,12 +11,10 @@ GREEN_COLOR = (0, 255, 0)
 RED_COLOR = (0, 0, 255)
 BORDER_SIZE = 100
 PROCESS_PIC_SIZE = m_to_num(1)
-ERODE_KERNEL = kernel(3)
-DILATE_KERNEL = kernel(9)
 
 blob_detector_params = cv.SimpleBlobDetector_Params()
 blob_detector_params.filterByArea = False
-blob_detector_params.filterByCircularity = False
+blob_detector_params.filterByCircularity = True
 blob_detector_params.filterByInertia = False
 blob_detector_params.filterByConvexity = False
 blob_detector_params.filterByColor = False
@@ -81,8 +79,8 @@ def process_channel(ch_img, sat_img, row, channel_name):
     (result, bin_img) = cv.threshold(half_bin_image, 0, 255, cv.THRESH_BINARY + cv.THRESH_OTSU)
     show_debug_image(bin_img, row, 2, channel_name + " thresh")
 
-    bin_img = cv.erode(bin_img, ERODE_KERNEL)
-    bin_img = cv.dilate(bin_img, DILATE_KERNEL)
+    bin_img = cv.erode(bin_img, kernel(3))
+    bin_img = cv.dilate(bin_img, kernel(9))
     # bin_img = cv2.morphologyEx(bin_img, cv2.MORPH_OPEN, kernel(5))
     # bin_img = cv2.morphologyEx(bin_img, cv2.MORPH_CLOSE, kernel(21))
     show_debug_image(bin_img, row, 3, channel_name + " morph")
