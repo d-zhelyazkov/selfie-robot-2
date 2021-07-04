@@ -4,8 +4,8 @@ import math
 import cv2.cv2 as cv
 import concurrent.futures
 
-from _utils import *
-from _windows import show_debug_image
+from imgproc._utils import *
+from imgproc._windows import show_debug_image
 
 GREEN_COLOR = (0, 255, 0)
 RED_COLOR = (0, 0, 255)

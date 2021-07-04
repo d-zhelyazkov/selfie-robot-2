@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 
 import cv2.cv2 as cv
-import config
+from imgproc import config
 
 WIN_SIZE = (400, 300)
 

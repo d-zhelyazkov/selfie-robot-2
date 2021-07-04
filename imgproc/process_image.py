@@ -4,7 +4,7 @@ import sys
 
 import cv2.cv2 as cv
 
-import image_processor
+from imgproc import image_processor
 
 
 def main():
