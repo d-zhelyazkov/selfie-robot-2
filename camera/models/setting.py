@@ -26,6 +26,7 @@ class Setting(object):
     """
     ISO = "ISO"
     FOCUS_MODE = "FOCUS_MODE"
+    FOCUS_DISTANCE = "FOCUS_DISTANCE"
     AE_MODE = "AE_MODE"
     AE_COMPENSATION = "AE_COMPENSATION"
     AE_LOCK = "AE_LOCK"

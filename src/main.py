@@ -1,12 +1,11 @@
 #!/usr/bin/env python3
 import logging as log
 
-
 import booleans
-import reactives
-import threads
 import cam_srv
 import imgproc.config
+import reactives
+import threads
 from imgproc import image_processor as imgproc
 from tools import show_image, draw_points, init_window
 
@@ -22,9 +21,9 @@ if GUI:
 
 imgproc.config.debug = False
 
+
 processed_imgs = reactives.Subject()
 processed_imgs.last = (cam_srv.images.last, ([], []))
-processed_imgs.subscribe(cam_srv.ParamOptimizer())
 
 
 def show_result(img, points):
@@ -56,7 +55,11 @@ def main():
             threads.RepeatingTimer(
                 function=display,
                 interval=0,
-            ) as display_timer:
+            ) as display_timer, \
+            cam_srv.ParamOptimizer() as param_optimizer:
+
+        processed_imgs.subscribe(param_optimizer)
+
         process_thread.start()
 
         if GUI:

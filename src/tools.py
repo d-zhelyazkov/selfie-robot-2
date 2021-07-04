@@ -52,8 +52,8 @@ def do_random_task(tasks: list):
     task = random.choice(tasks)
     result = task()
 
-    if not isinstance(result, bool) or result is True:
-        return result
-    else:
-        return do_random_task([task_ for task_ in tasks
-                               if task_ is not task])
+    return result
+
+
+def s2ns(s):
+    return s * 1_000_000_000

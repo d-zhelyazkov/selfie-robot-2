@@ -1,5 +1,7 @@
 import logging as log
 import math
+from dataclasses import dataclass
+from typing import List
 
 import numpy as np
 import rx.core as rx
@@ -9,7 +11,7 @@ from urllib3 import HTTPResponse
 
 import camera
 import reactives
-from tools import do_random_task
+from tools import do_random_task, s2ns
 
 camera_config = camera.Configuration()
 camera_config.host = "192.168.137.22:9001/camera"
@@ -43,49 +45,6 @@ def image():
     images.on_next(img)
 
     return img
-
-
-class ParamOptimizer(rx.Observer):
-
-    def __init__(self):
-        super().__init__()
-        camera_api.settings_aemode_put(camera.AEModeValue(camera.AEMode.OFF))
-
-        self.iso = ISOSetting()
-        self.ss = SSSetting()
-
-    def on_next(self, processing_result) -> None:
-        (_, points) = processing_result
-        (blue_points, red_points) = points
-        blue_cnt = len(blue_points)
-        red_cnt = len(red_points)
-        if blue_cnt == 2 and red_cnt == 1:
-            return
-
-        if blue_cnt < 2 or red_cnt < 1:
-            self.increase_exposure()
-        else:
-            self.decrease_exposure()
-
-    def increase_exposure(self):
-        if do_random_task([
-            self.iso.increase,
-            self.ss.decrease,
-        ]):
-            return True
-        else:
-            log.warning("Cannot increase exposure...")
-            return False
-
-    def decrease_exposure(self):
-        if do_random_task([
-            self.iso.decrease,
-            self.ss.increase,
-        ]):
-            return True
-        else:
-            log.warning("Cannot decrease exposure...")
-            return False
 
 
 class Setting:
@@ -124,13 +83,109 @@ class Setting:
     def reset_history(self):
         self.last_val = None
 
+    def __str__(self):
+        return f"{self.setting}: {self.value}; Info: {self.info}"
+
+
+@dataclass
+class SettingsContainer:
+    settings_: List[Setting]
+
+    def __enter__(self):
+        return self
+
+    def reset(self):
+        for setting in self.settings_:
+            setting.reset()
+
+    def __str__(self):
+        return "\n".join(map(str, self.settings_))
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        self.reset()
+
+
+class ParamOptimizer(SettingsContainer, rx.Observer):
+
+    def __init__(self):
+        # noinspection PyArgumentList
+        SettingsContainer.__init__(self, [
+            Setting(camera.Setting.AE_MODE),
+            ISOSetting(),
+            SSSetting(),
+            Focus(),
+        ])
+
+        self.ae, self.iso, self.ss, self.focus = self.settings_
+        self.ae.set(camera.AEMode.OFF)
+        self.focus.near()
+
+        log.info(self.settings_)
+
+    def on_next(self, processing_result) -> None:
+        (_, points) = processing_result
+        (blue_points, red_points) = points
+        blue_cnt = len(blue_points)
+        red_cnt = len(red_points)
+        if blue_cnt == 2 and red_cnt == 1:
+            return
+
+        change = False
+        if blue_cnt < 2 and red_cnt < 1:
+            change = self.increase_exposure()
+        elif blue_cnt > 2 and red_cnt > 1:
+            change = self.decrease_exposure()
+
+        if not change:
+            do_random_task([
+                self.iso.increase,
+                self.iso.decrease,
+                self.ss.increase,
+                self.ss.decrease,
+            ])
+
+    def increase_exposure(self):
+        if do_random_task([
+            self.iso.increase,
+            self.ss.decrease,
+        ]):
+            return True
+        else:
+            log.warning("Cannot increase exposure...")
+            return False
+
+    def decrease_exposure(self):
+        if do_random_task([
+            self.iso.decrease,
+            self.ss.increase,
+        ]):
+            return True
+        else:
+            log.warning("Cannot decrease exposure...")
+            return False
+
+    def reset(self):
+        self.ae.reset()
+        self.focus.reset()
+
+
+class SuggestingParamOptimizer(ParamOptimizer):
+    def increase_exposure(self):
+        log.info("Suggest exposure increase...")
+
+    def decrease_exposure(self):
+        log.info("Suggest exposure decrease...")
+
 
 class ISOSetting(Setting):
 
-    def __init__(self):
+    def __init__(self, max_val=800):
         super().__init__(camera.Setting.ISO)
         self.min_val = int(self.info.values[0])
-        self.max_val = int(int(self.info.values[-1]) / 2)
+        self.max_val = min(
+            int(self.info.values[2]),
+            max_val,
+        )
 
     @property
     def value(self):
@@ -149,21 +204,47 @@ class ISOSetting(Setting):
 
 class SSSetting(Setting):
 
-    def __init__(self):
+    def __init__(self, max_time=s2ns(1 / 100)):
+        """
+        :param max_time: max shutter speed time in ns
+        """
         super().__init__(camera.Setting.SHUTTER_SPEED)
-        self.min_val = int(self.info.values[0])
-        self.max_val = 10 ** (int(math.log10(int(self.info.values[-1]))) - 1)
+        self.min_time = int(self.info.values[0])
+        self.max_time = min(
+            10 ** (int(math.log10(int(self.info.values[-1])))),
+            max_time,
+        )
 
     @property
     def value(self):
+        """
+        in nanoseconds
+        """
         return int(super().value)
 
     def increase(self):
         new_ss = 10 ** (int(math.log10(self.value)) - 1)
-        new_ss = max(new_ss, self.min_val)
+        new_ss = max(new_ss, self.min_time)
         return self.set(new_ss)
 
     def decrease(self):
         new_ss = 10 ** (int(math.log10(self.value)) + 1)
-        new_ss = min(new_ss, self.max_val)
+        new_ss = min(new_ss, self.max_time)
         return self.set(new_ss)
+
+
+class Focus(SettingsContainer):
+
+    def __init__(self) -> None:
+        super().__init__([
+            Setting(camera.Setting.FOCUS_MODE),
+            Setting(camera.Setting.FOCUS_DISTANCE),
+        ])
+        self.mode, self.distance = self.settings_
+
+    def near(self):
+        self.mode.set(camera.FocusMode.MANUAL)
+        self.distance.set(self.distance.info.values[-1])
+
+    def reset(self):
+        self.mode.reset()

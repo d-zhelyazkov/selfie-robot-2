@@ -28,6 +28,7 @@ class FocusMode(object):
     MACRO = "MACRO"
     CONTINUOUS = "CONTINUOUS"
     EDF = "EDF"
+    MANUAL = "MANUAL"
     """
     Attributes:
       swagger_types (dict): The key is attribute name
