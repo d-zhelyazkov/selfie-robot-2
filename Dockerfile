@@ -7,7 +7,7 @@ WORKDIR $PROJ_DIR
 
 RUN echo "\
 deb http://deb.debian.org/debian jessie main" >> /etc/apt/sources.list
-
+RUN apt-key adv --keyserver keyserver.ubuntu.com --recv-keys 8B48AD6246925553 7638D0442B90D010 CBF8D6FD518E17E1
 RUN apt-get update && apt-get install -y \
 libatlas3-base libwebp6 libtiff5 libjasper1 libilmbase23 libopenexr23 libavcodec58 libavformat58 libavutil56 \
 libswscale5 libgtk-3-0 libpangocairo-1.0-0 libpango-1.0-0 libatk1.0-0 libcairo-gobject2 libcairo2 libgdk-pixbuf2.0-0
