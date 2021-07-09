@@ -29,7 +29,7 @@ docker run \
   -it \
   --network host \
   --privileged \
-  --device=/dev/ttyACM0 \
+  --volume "/dev/:/dev/" \
   -e DISPLAY="$DISPLAY" \
   -v /tmp/.X11-unix:/tmp/.X11-unix \
   --volume "$PROJECT_DIR:/opt/selfie-robot/" \

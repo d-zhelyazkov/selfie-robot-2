@@ -27,5 +27,5 @@ docker run \
   --privileged \
   -e DISPLAY="$DISPLAY" \
   -v /tmp/.X11-unix:/tmp/.X11-unix \
-  --device=/dev/ttyACM0 \
+  --volume "/dev/:/dev/" \
   "$IMG_NAME"
