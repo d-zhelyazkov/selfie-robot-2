@@ -1,90 +1,104 @@
-from math import atan2, sin, cos, isinf
-from numbers import Number
-from typing import Optional, Callable
-
-from sympy import Point2D, Line2D
+from dataclasses import dataclass
+from math import atan2, sin, cos, isinf, sqrt
+from typing import Optional
 
 
-def point(x, y) -> Point2D:
-    return Point2D(
-        x, y,
-        evaluate=False,
-    )
+@dataclass
+class Point:
+    x: float
+    y: float
+
+    def __sub__(self, other: 'Point'):
+        return Point(
+            self.x - other.x,
+            self.y - other.y,
+        )
 
 
-def midpoint(point1: Point2D, point2: Point2D) -> Point2D:
-    return point(
+@dataclass
+class Line:
+    # y = K.x + C, where K is the slope, C is the intercept
+
+    slope: float
+    intercept: float
+
+    def f(self, x) -> float:
+        return self.slope * x + self.intercept
+
+
+def distance(pt1: Point, pt2: Point) -> float:
+    return sqrt(pow((pt1.x - pt2.x), 2) + pow((pt1.y - pt2.y), 2))
+
+
+def line(pt1: Point, pt2: Point) -> Line:
+    slope = (pt2.y - pt1.y) / (pt2.x - pt1.x)
+    return Line(slope, line_intersect(slope, pt1))
+
+
+def midpoint(point1: Point, point2: Point) -> Point:
+    return Point(
         x=(point1.x + point2.x) / 2,
         y=(point1.y + point2.y) / 2,
     )
 
 
-def intersection(line1: Line2D, line2: Line2D) -> Optional[Point2D]:
-    # intersection_ = line1.intersection(line2)
-    # return intersection_[0] if intersection_ \
-    #     else None
-
+def intersection(line1: Line, line2: Line) -> Optional[Point]:
     if line1.slope == line2.slope:
         return None
 
     if isinf(line1.slope):
-        x = line_intercept(line1)
-        return point(x, line_func(line2)(x))
+        x = line1.intercept
+        return Point(x, line2.f(x))
     elif isinf(line2.slope):
-        x = line_intercept(line2)
-        return point(x, line_func(line1)(x))
+        x = line2.intercept
+        return Point(x, line1.f(x))
     else:
-        x = ((line_intercept(line2) - line_intercept(line1))
+        x = ((line2.intercept - line1.intercept)
              / (line1.slope - line2.slope))
-        return point(x, line_func(line1)(x))
+        return Point(x, line1.f(x))
 
 
-def two_points_90(a: Point2D, o: Point2D):
+def two_points_90(a: Point, o: Point):
     """
     Determines the pt that is 90 degree away from pt A based on pt O
     """
-    return point(
+    return Point(
         (o.x - a.y + o.y),
         (a.x - o.x + o.y),
     )
 
 
-def dist_pt_line_intercept(pt: Point2D, line: Line2D):
+def line_intersect(slope, pt):
+    return pt.y - pt.x * slope if not isinf(slope) else pt.x
+
+
+def parallel_line(line_: Line, pt: Point):
+    return Line(
+        line_.slope,
+        line_intersect(line_.slope, pt),
+    )
+
+
+def dist_pt_line_intercept(pt: Point, line_: Line):
     """
     Determines the distance from point to line on the X axis
     """
 
-    # noinspection PyTypeChecker
-    parallel_line: Line2D = line.parallel_line(pt)
-    return line_intercept(parallel_line) - line_intercept(line)
+    parallel_line_: Line = parallel_line(line_, pt)
+    return parallel_line_.intercept - line_.intercept
 
 
-def pts_same_side(p1, p2, line) -> bool:
+def pts_same_side(p1, p2, line_) -> bool:
     """
     Determines whether two points are on the same side against a line
     """
-    return (dist_pt_line_intercept(p1, line) * dist_pt_line_intercept(p2, line)) > 0
-
-
-def line_intercept(line: Line2D) -> float:
-    a, b, c = line.coefficients
-    # ax + by + c = 0
-    # y = K.x + C, where K is the slope, C is the intercept
-
-    return -c / b
-
-
-def line_func(line: Line2D) -> Callable[[Number], Number]:
-    a, b, c = line.coefficients
-    # ax + by + c = 0
-    # y = -(a/b)x - (c/b)
-    return lambda x: -(a / b) * x - (c / b)
+    return (dist_pt_line_intercept(p1, line_) * dist_pt_line_intercept(p2, line_)) > 0
 
 
 def three_pts_angle(
-        a: Point2D,
-        o: Point2D,
-        b: Point2D,
+        a: Point,
+        o: Point,
+        b: Point,
 ):
     """
     :return: in radians
