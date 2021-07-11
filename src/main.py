@@ -1,8 +1,6 @@
 #!/usr/bin/env python3
 import logging as log
 
-from sympy import deg
-
 import booleans
 import cam_srv
 import imgproc.config
@@ -39,9 +37,7 @@ def process():
     img = cam_srv.image()
 
     result = imgproc.process(img)
-    (blue_dots, red_dots) = result
-    log.info("Img processed. Found %d blue and %d red points", len(blue_dots), len(red_dots))
-    processed_imgs.on_next((img, (blue_dots, red_dots)))
+    processed_imgs.on_next((img, result))
 
 
 def display():
@@ -54,12 +50,15 @@ motion = Motion()
 
 def position(robot):
     robot_position, angle, distance = robot
+    if distance < 5:
+        log.info("I AM AT THE CENTER!!!")
+        return
+
+    # ToDo: rotate max 90 deg
     if not (-20 < angle < 20):
         motion.turn(angle)
-    elif distance > 5:
-        motion.movef(min(distance, 30))
     else:
-        log.info("I AM AT THE CENTER!!!")
+        motion.movef(min(distance, 30))
 
 
 def main():
@@ -69,12 +68,8 @@ def main():
                 interval=0,
                 name="ProcessThread",
             ) as process_thread, \
-            threads.RepeatingTimer(
-                function=display,
-                interval=0,
-            ) as display_timer, \
-            cam_srv.ParamOptimizer() as param_optimizer, \
-            motion:
+            motion, \
+            cam_srv.ParamOptimizer() as param_optimizer:
         processed_imgs.subscribe(robot_finder.find)
         robot_finder.found.subscribe(position)
         robot_finder.not_found.subscribe(param_optimizer)
@@ -82,7 +77,12 @@ def main():
         process_thread.start()
 
         if GUI:
+            display_timer = threads.RepeatingTimer(
+                function=display,
+                interval=0,
+            )
             display_timer.run()
+        # process_thread.run()
 
         process_thread.join()
 

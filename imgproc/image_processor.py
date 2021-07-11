@@ -1,11 +1,14 @@
 #!/usr/bin/env python3
+import concurrent.futures
+import logging
 import math
 
 import cv2.cv2 as cv
-import concurrent.futures
 
 from imgproc._utils import *
 from imgproc._windows import show_debug_image
+
+log = logging.getLogger(__name__)
 
 GREEN_COLOR = (0, 255, 0)
 RED_COLOR = (0, 0, 255)
@@ -89,6 +92,8 @@ def process_channel(ch_img, sat_img, row, channel_name):
 
     # Detect blobs.
     blobs = blob_detector.detect(bin_img)
+    log.info("Found %d %s blobs.", len(blobs), channel_name)
+
     blob_center_points = [blob.pt
                           for blob in blobs]
     return blob_center_points
