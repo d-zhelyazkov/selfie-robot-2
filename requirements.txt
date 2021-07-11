@@ -2,6 +2,7 @@ pyserial==3.4
 opencv-python
 numpy
 rx
+sympy
 
 certifi >= 14.05.14
 six >= 1.10
