@@ -21,6 +21,10 @@ blob_detector_params.filterByColor = False
 blob_detector_params.blobColor = 255
 blob_detector = cv.SimpleBlobDetector_create(blob_detector_params)
 
+multithreading = not config.debug
+if multithreading:
+    executor = concurrent.futures.ThreadPoolExecutor(max_workers=2)
+
 
 def process(img):
     show_debug_image(img, 0, 0, "image")
@@ -41,18 +45,16 @@ def process(img):
 
     tasks = (process_blue_channel, process_red_channel)
 
-    multithreading = not config.debug
     if multithreading:
-        with concurrent.futures.ThreadPoolExecutor() as executor:
-            futures = list(map(
-                lambda task: executor.submit(task),
-                tasks,
-            ))
+        futures = list(map(
+            lambda task: executor.submit(task),
+            tasks,
+        ))
 
-            points_sets = list(map(
-                lambda future: future.result(),
-                futures,
-            ))
+        points_sets = list(map(
+            lambda future: future.result(),
+            futures,
+        ))
     else:
         points_sets = list(map(
             lambda task: task(),
@@ -102,7 +104,7 @@ def resize_image(img):
     img_size = width * height
     debug("Image size: {}MP".format(num_to_m(img_size)))
 
-    k = math.sqrt(img_size / PROCESS_PIC_SIZE)
+    k = math.sqrt(img_size / min(img_size, PROCESS_PIC_SIZE))
     debug("Resize ratio: " + str(k))
 
     resized_width = int(width / k)
@@ -137,7 +139,7 @@ def show_result(img, blue_points, red_points):
             line_type=cv.LINE_AA
         )
 
-    success = are_robot_points(blue_points,red_points)
+    success = are_robot_points(blue_points, red_points)
     border_color = GREEN_COLOR if success else RED_COLOR
     result_img = cv.copyMakeBorder(
         src=result_img,
