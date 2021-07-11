@@ -2,10 +2,9 @@ import logging
 import math
 from enum import Enum
 
-from sympy import Point2D, Line2D
-
 import reactives
-from geometry import two_points_90, pts_same_side, three_pts_angle, normalize_angle, point, midpoint, intersection
+from geometry import two_points_90, pts_same_side, three_pts_angle, normalize_angle, midpoint, intersection, \
+    Point, line, parallel_line, distance
 
 ROBOT_UNIT = 5  # cm
 # distance from robot's center (the two wheels' middle point) to it's tail (the red light)
@@ -32,10 +31,10 @@ def find(processed_img):
 
     (height, width, _) = img.shape
     robot = transform(
-        wheel1=point(*blue_points[0]),
-        wheel2=point(*blue_points[1]),
-        tail=point(*red_points[0]),
-        scene_center=point(width / 2, height / 2),
+        wheel1=Point(*blue_points[0]),
+        wheel2=Point(*blue_points[1]),
+        tail=Point(*red_points[0]),
+        scene_center=Point(width / 2, height / 2),
     )
     logging.info("Robot FOUND!!!")
     logging.debug("Robot: %s", robot)
@@ -43,10 +42,10 @@ def find(processed_img):
 
 
 def transform(
-        wheel1: Point2D,
-        wheel2: Point2D,
-        tail: Point2D,
-        scene_center: Point2D,
+        wheel1: Point,
+        wheel2: Point,
+        tail: Point,
+        scene_center: Point,
 ):
     """
     :return: (
@@ -59,36 +58,35 @@ def transform(
 
     # finds the tail point's prime and its projection line - the main one
     tail_prime = two_points_90(wheel1, robot_center)
-    intersection_line = Line2D(wheel1, wheel2)
+    intersection_line = line(wheel1, wheel2)
     if not pts_same_side(tail, tail_prime, intersection_line):
         tail_prime = two_points_90(wheel2, robot_center)
-    main_projection_line = Line2D(tail, tail_prime)
+    main_projection_line = line(tail, tail_prime)
 
     # finds center line's prime
-    center_line = Line2D(scene_center, robot_center)
-    side_line = Line2D(tail, wheel1)
+    center_line = line(scene_center, robot_center)
+    side_line = line(tail, wheel1)
     side_intersection = intersection(center_line, side_line)
     if side_intersection:
-        side_line_prime = Line2D(tail_prime, wheel1)
+        side_line_prime = line(tail_prime, wheel1)
     else:
-        side_line = Line2D(tail, wheel2)
+        side_line = line(tail, wheel2)
         side_intersection = intersection(center_line, side_line)
-        side_line_prime = Line2D(tail_prime, wheel2)
+        side_line_prime = line(tail_prime, wheel2)
 
     # noinspection PyTypeChecker
-    side_intersection_projection_line: Line2D = main_projection_line.parallel_line(side_intersection)
+    side_intersection_projection_line = parallel_line(main_projection_line, side_intersection)
     side_intersection_prime = intersection(side_line_prime, side_intersection_projection_line)
-    center_line_prime = Line2D(robot_center, side_intersection_prime)
+    center_line_prime = line(robot_center, side_intersection_prime)
 
     # computes position, angle and distance
-    # noinspection PyTypeChecker
-    center_line_projection: Line2D = main_projection_line.parallel_line(scene_center)
+    center_line_projection = parallel_line(main_projection_line, scene_center)
     center_prime = intersection(center_line_projection, center_line_prime)
-    distance = center_prime.distance(robot_center) / robot_center.distance(tail_prime)
+    dist = distance(center_prime, robot_center) / distance(robot_center, tail_prime)
     robot_position = robot_center - center_prime
     angle = math.degrees(normalize_angle(
         three_pts_angle(tail_prime, robot_center, center_prime) - math.pi))
-    return robot_position, angle, (distance * ROBOT_UNIT)
+    return robot_position, angle, (dist * ROBOT_UNIT)
 
 
 def _handle_not_found(blue_points, red_points):
