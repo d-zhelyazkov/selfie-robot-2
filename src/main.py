@@ -5,6 +5,7 @@ import booleans
 import cam_srv
 import imgproc.config
 import reactives
+import robot_finder
 import threads
 from imgproc import image_processor as imgproc
 from tools import show_image, draw_points, init_window
@@ -58,7 +59,8 @@ def main():
             ) as display_timer, \
             cam_srv.ParamOptimizer() as param_optimizer:
 
-        processed_imgs.subscribe(param_optimizer)
+        processed_imgs.subscribe(robot_finder.find)
+        robot_finder.not_found.subscribe(param_optimizer)
 
         process_thread.start()
 

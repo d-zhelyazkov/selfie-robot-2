@@ -11,6 +11,7 @@ from urllib3 import HTTPResponse
 
 import camera
 import reactives
+import robot_finder
 from tools import do_random_task, s2ns
 
 camera_config = camera.Configuration()
@@ -122,18 +123,12 @@ class ParamOptimizer(SettingsContainer, rx.Observer):
 
         log.info(self.settings_)
 
-    def on_next(self, processing_result) -> None:
-        (_, points) = processing_result
-        (blue_points, red_points) = points
-        blue_cnt = len(blue_points)
-        red_cnt = len(red_points)
-        if blue_cnt == 2 and red_cnt == 1:
-            return
+    def on_next(self, not_found_case) -> None:
 
         change = False
-        if blue_cnt < 2 and red_cnt < 1:
+        if not_found_case == robot_finder.NotFoundCase.FEW_POINTS:
             change = self.increase_exposure()
-        elif blue_cnt > 2 and red_cnt > 1:
+        elif not_found_case == robot_finder.NotFoundCase.MANY_POINTS:
             change = self.decrease_exposure()
 
         if not change:
