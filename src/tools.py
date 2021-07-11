@@ -37,8 +37,8 @@ def draw_points(img, points):
             position=position,
             color=GREEN_COLOR,
             markerType=cv.MARKER_TILTED_CROSS,
-            markerSize=100,
-            thickness=20,
+            markerSize=50,
+            thickness=10,
             line_type=cv.LINE_AA
         )
 
