@@ -39,7 +39,7 @@ def process():
     img = cam_srv.image()
 
     result = imgproc.process(img)
-    processed_imgs.on_next((img, result))
+    processed_imgs.on_next(robot_finder.ProcessedImg(img, *result))
 
 
 def display():
@@ -51,9 +51,8 @@ def display():
 motion = Motion() if booleans.env("MOTION", True) else NullMotion()
 
 
-def position(robot):
-    robot_position, angle, distance = robot
-    if distance < 5:
+def position(robot: robot_finder.Object):
+    if robot.dist < 5:
         log.info("I AM AT THE CENTER!!!")
 
         log.info(f"Taking a selfie...")
@@ -62,10 +61,10 @@ def position(robot):
         selfies.on_next(selfie)
 
     # ToDo: rotate max 90 deg
-    if not (-20 < angle < 20):
-        motion.turn(angle)
+    if not (-20 < robot.angle < 20):
+        motion.turn(robot.angle)
     else:
-        motion.movef(min(distance, 30))
+        motion.movef(min(robot.dist, 30))
 
 
 def main():
@@ -78,7 +77,7 @@ def main():
                 name="ProcessThread",
             ) as process_thread:
         processed_imgs.subscribe(robot_finder.find)
-        robot_finder.found.subscribe(position)
+        robot_finder.found.subscribe(on_next=lambda f: position(f[0]))
         robot_finder.found.subscribe(cam_srv.ParamOptimizer.on_found)
         robot_finder.not_found.subscribe(
             cam_srv.ParamOptimizer.on_not_found)

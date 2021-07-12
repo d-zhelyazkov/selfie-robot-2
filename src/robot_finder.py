@@ -1,6 +1,10 @@
 import logging
 import math
+from dataclasses import dataclass
 from enum import Enum
+from typing import List
+
+import numpy as np
 
 import reactives
 from geometry import two_points_90, pts_same_side, three_pts_angle, normalize_angle, midpoint, intersection, \
@@ -13,32 +17,48 @@ found = reactives.Subject()
 not_found = reactives.Subject()
 
 
+@dataclass
+class ProcessedImg:
+    img: np.ndarray
+    blue_pts: List[tuple]
+    red_pts: List[tuple]
+
+
+@dataclass
+class Object:
+    pos: Point
+    angle: float
+    dist: float
+
+
 class NotFoundCase(Enum):
     UNDEF = 0
     MANY_POINTS = 1
     FEW_POINTS = 2
 
 
-def find(processed_img):
-    img, points = processed_img
-    blue_points, red_points = points
+def find(processed_img: ProcessedImg):
     if (
-            len(blue_points) != 2
+            len(processed_img.blue_pts) != 2
             or
-            len(red_points) != 1
+            len(processed_img.red_pts) != 1
     ):
-        return _handle_not_found(blue_points, red_points)
+        return _handle_not_found(processed_img.blue_pts, processed_img.red_pts)
 
-    (height, width, _) = img.shape
-    robot = transform(
-        wheel1=Point(*blue_points[0]),
-        wheel2=Point(*blue_points[1]),
-        tail=Point(*red_points[0]),
-        scene_center=Point(width / 2, height / 2),
-    )
-    logging.info("Robot FOUND!!!")
-    logging.debug("Robot: %s", robot)
-    found.on_next(robot)
+    try:
+        (height, width, _) = processed_img.img.shape
+        robot = transform(
+            wheel1=Point(*processed_img.blue_pts[0]),
+            wheel2=Point(*processed_img.blue_pts[1]),
+            tail=Point(*processed_img.red_pts[0]),
+            scene_center=Point(width / 2, height / 2),
+        )
+        logging.info("Robot FOUND!!!")
+        logging.debug("Robot: %s", robot)
+        found.on_next((robot, processed_img))
+    except Exception as e:
+        logging.error("Error while transforming robot parameters.", exc_info=e)
+        not_found.on_next(NotFoundCase.UNDEF)
 
 
 def transform(
@@ -86,7 +106,7 @@ def transform(
     robot_position = robot_center - center_prime
     angle = math.degrees(normalize_angle(
         three_pts_angle(tail_prime, robot_center, center_prime) - math.pi))
-    return robot_position, angle, (dist * ROBOT_UNIT)
+    return Object(robot_position, angle, (dist * ROBOT_UNIT))
 
 
 def _handle_not_found(blue_points, red_points):
