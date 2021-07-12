@@ -1,5 +1,8 @@
+import dataclasses
+import json
 import random
 
+import cv2
 import numpy as np
 from cv2 import cv2 as cv
 
@@ -57,3 +60,14 @@ def do_random_task(tasks: list):
 
 def s2ns(s):
     return s * 1_000_000_000
+
+
+def write_img(img, file_):
+    cv2.imwrite(str(file_), img)
+
+
+class JSONEncoder(json.JSONEncoder):
+    def default(self, o):
+        if dataclasses.is_dataclass(o):
+            return dataclasses.asdict(o)
+        return super().default(o)
