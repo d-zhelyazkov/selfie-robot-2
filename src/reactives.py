@@ -6,10 +6,10 @@ import rx.subject
 
 class Subject(rx.subject.Subject):
 
-    def __init__(self):
+    def __init__(self, current=None):
         super().__init__()
 
-        self.last = None
+        self.last = current
         self._next_event = threading.Event()
 
     def on_next(self, value: Any) -> None:

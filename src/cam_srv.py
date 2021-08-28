@@ -1,10 +1,10 @@
 import logging as log
 import math
 from dataclasses import dataclass
+from enum import Enum, auto
 from typing import List
 
 import numpy as np
-import rx.core as rx
 import urllib3
 from cv2 import cv2 as cv
 from urllib3 import HTTPResponse
@@ -32,8 +32,7 @@ camera_api = camera.DefaultApi(camera.ApiClient(camera_config))
 # camera_api.settings_shutterspeed_put(body=camera.ShutterSpeedValue(100000))
 
 
-images = reactives.Subject()
-images.last = np.ndarray(())
+images = reactives.Subject(np.ndarray(()))
 
 
 def image():
@@ -55,6 +54,7 @@ class Setting:
         self._value = self.info.value
         self.init_val = self.value
         self.last_val = None
+        self.backups = list()
 
     @property
     def value(self):
@@ -77,6 +77,27 @@ class Setting:
         self._value = new_val
         return True
 
+    def sync(self):
+        self.info = camera_api.settings_setting_get(self.setting)
+        self._value = self.info.value
+
+    def backup(self):
+        if self.backups and self.backups[-1] == self._value:
+            return
+
+        log.debug("Backing up %s with value %s", self.setting, self._value)
+        self.backups.append(self._value)
+
+    def restore(self):
+        if not self.backups:
+            log.debug("No backups for %s", self.setting)
+            return False
+
+        change = self.set(self.backups.pop())
+        if change:
+            log.debug("%s restored to %s", self.setting, self._value)
+        return change
+
     def reset(self):
         self.set(self.init_val)
         self.reset_history()
@@ -89,15 +110,26 @@ class Setting:
 
 
 @dataclass
-class SettingsContainer:
+class SettingsContainer(Setting):
     settings_: List[Setting]
 
     def __enter__(self):
+        log.info(str(self))
         return self
 
     def reset(self):
         for setting in self.settings_:
             setting.reset()
+
+    def backup(self):
+        for setting in self.settings_:
+            setting.backup()
+
+    def restore(self):
+        change = False
+        for setting in self.settings_:
+            change |= setting.restore()
+        return change
 
     def __str__(self):
         return "\n".join(map(str, self.settings_))
@@ -106,70 +138,105 @@ class SettingsContainer:
         self.reset()
 
 
-class ParamOptimizer(SettingsContainer, rx.Observer):
+class ParamOptimizer:
 
+    @staticmethod
+    def on_found(_):
+        exposure.backup()
+        focus.backup()
+
+    @staticmethod
+    def on_not_found(case) -> None:
+        change = False
+        change |= exposure.restore()
+        change |= focus.restore()
+        if change:
+            return
+
+        change = focus.near()
+        if change:
+            return
+
+        if case == robot_finder.NotFoundCase.FEW_POINTS:
+            change = do_random_task([
+                exposure.increase,
+                exposure.decrease,
+                # focus.auto,
+            ])
+        elif case == robot_finder.NotFoundCase.MANY_POINTS:
+            change = do_random_task([
+                exposure.decrease,
+                # focus.near,
+            ])
+
+        if not change:
+            do_random_task([
+                exposure.increase,
+                exposure.decrease,
+                # focus.auto,
+                # focus.near,
+            ])
+
+
+class Exposure(SettingsContainer):
     def __init__(self):
         # noinspection PyArgumentList
         SettingsContainer.__init__(self, [
             Setting(camera.Setting.AE_MODE),
             ISOSetting(),
             SSSetting(),
-            Focus(),
         ])
 
-        self.ae, self.iso, self.ss, self.focus = self.settings_
-        self.ae.set(camera.AEMode.OFF)
-        self.focus.near()
+        self.ae, self.iso, self.ss = self.settings_
 
-        log.info(self.settings_)
+    def auto(self):
+        return self.ae.set(camera.AEMode.ON)
 
-    def on_next(self, not_found_case) -> None:
-
-        change = False
-        if not_found_case == robot_finder.NotFoundCase.FEW_POINTS:
-            change = self.increase_exposure()
-        elif not_found_case == robot_finder.NotFoundCase.MANY_POINTS:
-            change = self.decrease_exposure()
-
-        if not change:
-            do_random_task([
-                self.iso.increase,
-                self.iso.decrease,
-                self.ss.increase,
-                self.ss.decrease,
-            ])
-
-    def increase_exposure(self):
-        if do_random_task([
+    def increase(self):
+        return self.__change([
             self.iso.increase,
             self.ss.decrease,
-        ]):
-            return True
-        else:
-            log.warning("Cannot increase exposure...")
-            return False
+        ])
 
-    def decrease_exposure(self):
-        if do_random_task([
+    def decrease(self):
+        return self.__change([
             self.iso.decrease,
             self.ss.increase,
-        ]):
-            return True
-        else:
-            log.warning("Cannot decrease exposure...")
-            return False
+        ])
+
+    def __change(self, changes):
+        self.manual()
+
+        change = False
+        for _ in range(3):
+            change = do_random_task(changes)
+            if change:
+                break
+
+        if not change:
+            log.warning("Failed to alter exposure...")
+        return change
+
+    def manual(self):
+        change = self.ae.set(camera.AEMode.OFF)
+        if change:
+            self.iso.sync()
+            self.ss.sync()
+        return change
+
+    def backup(self):
+        self.iso.backup()
+        self.ss.backup()
+
+    def restore(self):
+        change = False
+        change |= self.manual()
+        change |= self.iso.restore()
+        change |= self.ss.restore()
+        return change
 
     def reset(self):
-        self.ae.reset()
-        self.focus.reset()
-
-
-class SuggestingParamOptimizer(ParamOptimizer):
-    def increase_exposure(self):
-        log.info("Suggest exposure increase...")
-
-    def decrease_exposure(self):
-        log.info("Suggest exposure decrease...")
+        self.auto()
 
 
 class ISOSetting(Setting):
@@ -207,7 +274,7 @@ class SSSetting(Setting):
         self.min_time = int(self.info.values[0])
         self.max_time = min(
             10 ** (int(math.log10(int(self.info.values[-1])))),
-            max_time,
+            int(max_time),
         )
 
     @property
@@ -229,6 +296,9 @@ class SSSetting(Setting):
 
 
 class Focus(SettingsContainer):
+    class Mode(Enum):
+        AUTO = auto()
+        NEAR = auto()
 
     def __init__(self) -> None:
         super().__init__([
@@ -236,10 +306,56 @@ class Focus(SettingsContainer):
             Setting(camera.Setting.FOCUS_DISTANCE),
         ])
         self.mode, self.distance = self.settings_
+        self._backup = None
+        self._value = None
+
+    def auto(self):
+        self._value = Focus.Mode.AUTO
+        return self.mode.set(camera.FocusMode.AUTO)
 
     def near(self):
-        self.mode.set(camera.FocusMode.MANUAL)
-        self.distance.set(self.distance.info.values[-1])
+        change = False
+        change |= self.mode.set(camera.FocusMode.MANUAL)
+        change |= self.distance.set(self.distance.info.values[-1])
+        self._value = Focus.Mode.NEAR
+        return change
+
+    def backup(self):
+        self._backup = self._value
+
+    def restore(self):
+        if self._backup == Focus.Mode.AUTO:
+            return self.auto()
+        elif self._backup == Focus.Mode.NEAR:
+            return self.near()
+        else:
+            return False
 
     def reset(self):
-        self.mode.reset()
+        self.auto()
+
+
+exposure = Exposure()
+focus = Focus()
+
+
+@dataclass
+class SettingBackup:
+    setting: Setting
+
+    def __enter__(self):
+        self.setting.backup()
+        return self
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        self.setting.restore()
+
+
+def snapshot():
+    log.info("Snapshotting...")
+    with SettingBackup(exposure), SettingBackup(focus):
+        exposure.auto()
+        focus.auto()
+        snap = image()
+    log.info("Snapshot complete!")
+    return snap
