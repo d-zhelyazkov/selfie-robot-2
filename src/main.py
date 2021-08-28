@@ -1,6 +1,8 @@
 #!/usr/bin/env python3
 import logging as log
 
+from sympy import deg
+
 import booleans
 import cam_srv
 import imgproc.config
@@ -8,6 +10,7 @@ import reactives
 import robot_finder
 import threads
 from imgproc import image_processor as imgproc
+from motion import Motion
 from tools import show_image, draw_points, init_window
 
 log.basicConfig(
@@ -46,6 +49,19 @@ def display():
     show_result(*processed_imgs.last)
 
 
+motion = Motion()
+
+
+def position(robot):
+    robot_position, angle, distance = robot
+    if not (-20 < angle < 20):
+        motion.turn(angle)
+    elif distance > 5:
+        motion.movef(min(distance, 30))
+    else:
+        log.info("I AM AT THE CENTER!!!")
+
+
 def main():
     with \
             threads.RepeatingTimer(
@@ -57,9 +73,10 @@ def main():
                 function=display,
                 interval=0,
             ) as display_timer, \
-            cam_srv.ParamOptimizer() as param_optimizer:
-
+            cam_srv.ParamOptimizer() as param_optimizer, \
+            motion:
         processed_imgs.subscribe(robot_finder.find)
+        robot_finder.found.subscribe(position)
         robot_finder.not_found.subscribe(param_optimizer)
 
         process_thread.start()
