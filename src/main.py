@@ -18,11 +18,14 @@ log.basicConfig(
     format="[%(asctime)s] [%(name)s] %(message)s",
 )
 
+PROC_WIN = "processing"
+SNAP_WIN = "selfie"
+
 GUI = booleans.env("GUI", False)
 
 if GUI:
-    init_window("result")
-    init_window("selfie")
+    init_window(PROC_WIN)
+    init_window(SNAP_WIN)
 
 imgproc.config.debug = False
 
@@ -30,30 +33,34 @@ processed_imgs = reactives.Subject((np.ndarray(()), ([], [])))
 selfies = reactives.Subject(np.ndarray(()))
 
 
-def show_result(img, points):
-    (blue_points, red_points) = points
-    show_image(draw_points(img, blue_points + red_points), "result")
+def show_result(processed_img: robot_finder.ProcessedImg):
+    show_image(
+        img=draw_points(
+            processed_img.img,
+            processed_img.blue_pts + processed_img.red_pts
+        ),
+        win_name=PROC_WIN,
+    )
 
 
 def process():
     img = cam_srv.image()
 
     result = imgproc.process(img)
-    processed_imgs.on_next((img, result))
+    processed_imgs.on_next(robot_finder.ProcessedImg(img, *result))
 
 
 def display():
     processed_imgs.wait_next()
-    show_result(*processed_imgs.last)
-    show_image(selfies.last, "selfie")
+    show_result(processed_imgs.last)
+    show_image(selfies.last, SNAP_WIN)
 
 
 motion = Motion() if booleans.env("MOTION", True) else NullMotion()
 
 
-def position(robot):
-    robot_position, angle, distance = robot
-    if distance < 5:
+def position(robot: robot_finder.Object):
+    if robot.dist < 5:
         log.info("I AM AT THE CENTER!!!")
 
         log.info(f"Taking a selfie...")
@@ -62,10 +69,10 @@ def position(robot):
         selfies.on_next(selfie)
 
     # ToDo: rotate max 90 deg
-    if not (-20 < angle < 20):
-        motion.turn(angle)
+    if not (-20 < robot.angle < 20):
+        motion.turn(robot.angle)
     else:
-        motion.movef(min(distance, 30))
+        motion.movef(min(robot.dist, 30))
 
 
 def main():
@@ -78,7 +85,7 @@ def main():
                 name="ProcessThread",
             ) as process_thread:
         processed_imgs.subscribe(robot_finder.find)
-        robot_finder.found.subscribe(position)
+        robot_finder.found.subscribe(on_next=lambda f: position(f[0]))
         robot_finder.found.subscribe(cam_srv.ParamOptimizer.on_found)
         robot_finder.not_found.subscribe(
             cam_srv.ParamOptimizer.on_not_found)
