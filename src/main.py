@@ -75,6 +75,16 @@ def position(robot: robot_finder.Object):
         motion.movef(min(robot.dist, 30))
 
 
+def run_gui():
+    if not GUI:
+        return
+    display_timer = threads.RepeatingTimer(
+        function=display,
+        interval=0,
+    )
+    display_timer.run()
+
+
 def main():
     with \
             cam_srv.exposure, cam_srv.focus, \
@@ -91,14 +101,7 @@ def main():
             cam_srv.ParamOptimizer.on_not_found)
 
         process_thread.start()
-
-        if GUI:
-            display_timer = threads.RepeatingTimer(
-                function=display,
-                interval=0,
-            )
-            display_timer.run()
-        # process_thread.run()
+        run_gui()
 
         process_thread.join()
 
