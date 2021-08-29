@@ -1,4 +1,5 @@
 import random
+from datetime import datetime, timezone
 
 import numpy as np
 from cv2 import cv2 as cv
@@ -37,8 +38,8 @@ def draw_points(img, points):
             position=position,
             color=GREEN_COLOR,
             markerType=cv.MARKER_TILTED_CROSS,
-            markerSize=50,
-            thickness=10,
+            markerSize=20,
+            thickness=2,
             line_type=cv.LINE_AA
         )
 

@@ -7,12 +7,13 @@ import cv2.cv2 as cv
 
 from imgproc._utils import *
 from imgproc._windows import show_debug_image
+from tools import draw_points
 
 log = logging.getLogger(__name__)
 
 GREEN_COLOR = (0, 255, 0)
 RED_COLOR = (0, 0, 255)
-BORDER_SIZE = 100
+BORDER_SIZE = 10
 PROCESS_PIC_SIZE = m_to_num(1)
 
 blob_detector_params = cv.SimpleBlobDetector_Params()
@@ -131,18 +132,7 @@ def show_result(img, blue_points, red_points):
 
     result_img = img.copy()
 
-    points = blue_points + red_points
-    for point in points:
-        position = (int(point[0]), int(point[1]))
-        cv.drawMarker(
-            img=result_img,
-            position=position,
-            color=GREEN_COLOR,
-            markerType=cv.MARKER_TILTED_CROSS,
-            markerSize=100,
-            thickness=20,
-            line_type=cv.LINE_AA
-        )
+    result_img = draw_points(result_img, blue_points + red_points)
 
     success = are_robot_points(blue_points, red_points)
     border_color = GREEN_COLOR if success else RED_COLOR

@@ -1,3 +1,4 @@
 #!/usr/bin/env python3
+import booleans
 
-debug = False
+debug = booleans.env("IMGPROC_DEBUG", False)
