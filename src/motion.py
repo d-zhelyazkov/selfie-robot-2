@@ -1,6 +1,8 @@
 import logging
 import threading
 import time
+from collections import deque
+from dataclasses import dataclass
 
 import serial
 
@@ -10,12 +12,30 @@ import threads
 log = logging.getLogger(__name__)
 
 
+@dataclass
+class Command:
+    cmd: str
+    val: int
+    units: str
+
+    def __str__(self):
+        return f"{self.cmd} {self.val} {self.units}"
+
+    def revert(self) -> 'Command':
+        return Command(
+            self.cmd,
+            -self.val,
+            self.units,
+        )
+
+
 class Motion:
 
     def __init__(self) -> None:
         self.events = reactives.Subject()
         self.__comm = None
         self.__reading_thread = None
+        self.__recent_moves = deque(maxlen=10)
 
     def __enter__(self):
         self.init()
@@ -46,17 +66,24 @@ class Motion:
 
     def turn(self, deg):
         deg = int(deg)
+        cmd = Command("TURN", deg, "DEG")
+
         log.info(f"Turning {deg} degrees...")
-        self.__move(f"TURN {deg} DEG")
+        self.__move(cmd)
 
     def movef(self, dist):
         """
         :param dist: cm
         """
-        log.info(f"Moving forward...")
-        self.__move(f"MOVE FORWARD {int(dist)} UNITS")
+        dist = int(dist)
+        cmd = Command("MOVE FORWARD", dist, "UNITS")
 
-    def __move(self, cmd):
+        log.info(f"Moving {dist}cm forward...")
+        self.__move(cmd)
+
+        self.__recent_moves.append(cmd)
+
+    def __move(self, cmd: Command):
         if not self.__comm:
             log.warning("Cannot move since not initialized...")
             return
@@ -68,12 +95,19 @@ class Motion:
                 done.set()
 
         with self.events.subscribe(check_done):
-            self.__comm.write(cmd.encode())
+            self.__comm.write(str(cmd).encode())
             success = done.wait(10)
             if success:
                 log.info("Move complete!")
             else:
                 log.error("Moving didn't complete on time...")
+
+    def back(self):
+        if not len(self.__recent_moves):
+            return
+
+        last_cmd: Command = self.__recent_moves.pop()
+        self.__move(last_cmd.revert())
 
     def __exit__(self, exc_type, exc_val, exc_tb):
         self.stop()
