@@ -13,6 +13,10 @@ The loop is reactive (RxPY): capture, processing and motion run as event streams
 
 `imgproc/eval.py` measures the detection success rate over a folder of recorded images; `analyze.ipynb` studies detection outliers from the recorded LED geometry.
 
+## Status
+
+The next step was replacing the hand-tuned LED detector with a CNN. The last work built its training set: `src/random_robot.py` (run by `run_random_robot.sh`) drives the robot randomly and saves each frame with the LED positions the current detector found, so the images label themselves. `analyze.ipynb` filters out bad labels by checking that the three points fit the LEDs' known geometry. The CNN itself was not trained.
+
 ## Stack
 
 Python · OpenCV · NumPy · RxPY · Raspberry Pi · Arduino · Docker
